@@ -64,7 +64,7 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public IActionResult Update(int id, [FromBody] UpdateTodoRequest request)
         {
             try

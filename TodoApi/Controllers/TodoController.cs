@@ -7,7 +7,7 @@ using TodoApi.Interfaces;
 namespace TodoApi.Controllers
 {
     [ApiController]
-    [Route("api")]
+    [Route("api/todos")]
     public class TodoController : ControllerBase
     {
 
@@ -17,20 +17,14 @@ namespace TodoApi.Controllers
             _todoService = todoService;
         }
 
-        [HttpPost("createTodo")]
-        public IActionResult CreateTodo([FromBody] CreateTodoRequest createTodoRequest)
+        [HttpPost]
+        public IActionResult Create([FromBody] CreateTodoRequest request)
         {
             try
             {
-                var todo = new Todo
-                {
-                    Title = createTodoRequest.Title,
-                    Description = createTodoRequest.Description,
-                    IsCompleted = false
-                };
+                var result = _todoService.CreateTodo(request);
 
-                var result = _todoService.CreateTodo(todo);
-                return Ok(result);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
             catch (Exception ex)
             {
@@ -38,8 +32,8 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpGet("getTodo")]
-        public IActionResult GetAllTodos()
+        [HttpGet]
+        public IActionResult GetAll()
         {
             try
             {
@@ -52,17 +46,15 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpGet("getTodo/{id}")]
-        public IActionResult GetTodoById(int id)
+        [HttpGet("{id}")]
+        public IActionResult GetById(int id)
         {
             try
             {
                 var todo = _todoService.GetTodoById(id);
 
                 if (todo == null)
-                {
                     return NotFound();
-                }
 
                 return Ok(todo);
             }
@@ -72,26 +64,16 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpPost("updateTodo/{id}")]
-        public IActionResult UpdateTodo(int id, [FromBody] UpdateTodoRequest request)
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, [FromBody] UpdateTodoRequest request)
         {
             try
             {
+                var result = _todoService.UpdateTodo(id, request);
 
-                var existingTodo = _todoService.GetTodoById(id);
-                if (existingTodo == null)
-                {
+                if (result == null)
                     return NotFound();
-                }
 
-                var todo = new Todo
-                {
-                    Title = request.Title,
-                    Description = request.Description,
-                    IsCompleted = request.IsCompleted
-                };
-
-                var result = _todoService.UpdateTodo(id, todo);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -100,17 +82,17 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpPost("deleteTodo/{id}")]
-        public IActionResult DeleteTodo(int id)
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
         {
             try
             {
                 var result = _todoService.DeleteTodo(id);
-                if (result)
-                {
-                    return Ok(new { message = "Todo deleted successfully" });
-                }
-                return NotFound();
+
+                if (!result)
+                    return NotFound();
+
+                return NoContent();
             }
             catch (Exception ex)
             {

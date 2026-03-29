@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using TodoApi.DTOs;
+using TodoApi.Exceptions;
 using TodoApi.Interfaces;
 using TodoApi.Models;
 
@@ -14,12 +15,12 @@ namespace TodoApi.Services
             _repository = repository;
         }
 
-        public TodoResponse CreateTodo(CreateTodoRequest createTodoRequest)
+        public TodoResponse CreateTodo(CreateTodoRequest request)
         {
             var todo = new Todo
             {
-                Title = createTodoRequest.Title,
-                Description = createTodoRequest.Description,
+                Title = request.Title,
+                Description = request.Description,
                 IsCompleted = false,
                 CreatedAt = DateTime.UtcNow
             };
@@ -40,24 +41,28 @@ namespace TodoApi.Services
         {
             var todo = _repository.GetById(id);
 
-            return todo == null ? null : MapToResponse(todo);
+            if (todo == null)
+                throw new NotFoundException($"Todo with id {id} not found");
+
+            return MapToResponse(todo);
         }
 
-        public TodoResponse UpdateTodo(int id, UpdateTodoRequest updateTodoRequest)
+        public TodoResponse UpdateTodo(int id, UpdateTodoRequest request)
         {
             var existing = _repository.GetById(id);
 
             if (existing == null)
-                return null;
+                throw new NotFoundException($"Todo with id {id} not found");
 
-            if (updateTodoRequest.Title != null)
-                existing.Title = updateTodoRequest.Title;
+            // PATCH-style update
+            if (request.Title != null)
+                existing.Title = request.Title;
 
-            if (updateTodoRequest.Description != null)
-                existing.Description = updateTodoRequest.Description;
+            if (request.Description != null)
+                existing.Description = request.Description;
 
-            if (updateTodoRequest.IsCompleted.HasValue)
-                existing.IsCompleted = updateTodoRequest.IsCompleted.Value;
+            if (request.IsCompleted.HasValue)
+                existing.IsCompleted = request.IsCompleted.Value;
 
             var updated = _repository.Update(id, existing);
 
@@ -66,7 +71,12 @@ namespace TodoApi.Services
 
         public bool DeleteTodo(int id)
         {
-            return _repository.Delete(id);
+            var deleted = _repository.Delete(id);
+
+            if (!deleted)
+                throw new NotFoundException($"Todo with id {id} not found");
+
+            return true;
         }
 
 

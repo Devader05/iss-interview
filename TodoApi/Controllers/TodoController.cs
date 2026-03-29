@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TodoApi.Models;
 using TodoApi.Services;
+using TodoApi.DTOs;
 
 namespace TodoApi.Controllers
 {
@@ -13,11 +14,18 @@ namespace TodoApi.Controllers
         }
 
         [HttpPost("createTodo")]
-        public IActionResult CreateTodo([FromBody] Todo todo)
+        public IActionResult CreateTodo([FromBody] CreateTodoRequest createTodoRequest)
         {
             try
             {
                 var todoService = new TodoService();
+                var todo = new Todo
+                {
+                    Title = createTodoRequest.Title,
+                    Description = createTodoRequest.Description,
+                    IsCompleted = false
+                };
+
                 var result = todoService.CreateTodo(todo);
                 return Ok(result);
             }
@@ -27,26 +35,14 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpPost("getTodo")]
-        public IActionResult GetTodo([FromBody] GetTodoRequest request)
+        [HttpGet("getTodo")]
+        public IActionResult GetAllTodos()
         {
             try
             {
                 var todoService = new TodoService();
-                if (request.Id.HasValue)
-                {
-                    var todo = todoService.GetTodoById(request.Id.Value);
-                    if (todo == null)
-                    {
-                        return NotFound();
-                    }
-                    return Ok(todo);
-                }
-                else
-                {
-                    var todos = todoService.GetAllTodos();
-                    return Ok(todos);
-                }
+                var todos = todoService.GetAllTodos();
+                return Ok(todos);
             }
             catch (Exception ex)
             {
@@ -54,13 +50,35 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpPost("updateTodo")]
-        public IActionResult UpdateTodo([FromBody] UpdateTodoRequest request)
+        [HttpGet("getTodo/{id}")]
+        public IActionResult GetTodoById(int id)
         {
             try
             {
                 var todoService = new TodoService();
-                var existingTodo = todoService.GetTodoById(request.Id);
+                var todo = todoService.GetTodoById(id);
+
+                if (todo == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(todo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("updateTodo/{id}")]
+        public IActionResult UpdateTodo(int id, [FromBody] UpdateTodoRequest request)
+        {
+            try
+            {
+                var todoService = new TodoService();
+
+                var existingTodo = todoService.GetTodoById(id);
                 if (existingTodo == null)
                 {
                     return NotFound();
@@ -73,7 +91,7 @@ namespace TodoApi.Controllers
                     IsCompleted = request.IsCompleted
                 };
 
-                var result = todoService.UpdateTodo(request.Id, todo);
+                var result = todoService.UpdateTodo(id, todo);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -82,13 +100,13 @@ namespace TodoApi.Controllers
             }
         }
 
-        [HttpPost("deleteTodo")]
-        public IActionResult DeleteTodo([FromBody] DeleteTodoRequest request)
+        [HttpPost("deleteTodo/{id}")]
+        public IActionResult DeleteTodo(int id)
         {
             try
             {
                 var todoService = new TodoService();
-                var result = todoService.DeleteTodo(request.Id);
+                var result = todoService.DeleteTodo(id);
                 if (result)
                 {
                     return Ok(new { message = "Todo deleted successfully" });
@@ -100,23 +118,5 @@ namespace TodoApi.Controllers
                 return BadRequest(ex.Message);
             }
         }
-    }
-
-    public class GetTodoRequest
-    {
-        public int? Id { get; set; }
-    }
-
-    public class UpdateTodoRequest
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public bool IsCompleted { get; set; }
-    }
-
-    public class DeleteTodoRequest
-    {
-        public int Id { get; set; }
     }
 }

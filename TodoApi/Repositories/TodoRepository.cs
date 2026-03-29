@@ -14,11 +14,16 @@ namespace TodoApi.Repositories
             connection.Open();
 
             var command = connection.CreateCommand();
-            command.CommandText = $@"
-                INSERT INTO Todos (Title, Description, IsCompleted, CreatedAt)
-                VALUES ('{todo.Title}', '{todo.Description}', {(todo.IsCompleted ? 1 : 0)}, '{DateTime.UtcNow:o}');
-                SELECT last_insert_rowid();
-            ";
+            command.CommandText = @"
+    INSERT INTO Todos (Title, Description, IsCompleted, CreatedAt)
+    VALUES ($title, $description, $isCompleted, $createdAt);
+    SELECT last_insert_rowid();
+";
+
+            command.Parameters.AddWithValue("$title", todo.Title);
+            command.Parameters.AddWithValue("$description", todo.Description ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("$isCompleted", todo.IsCompleted ? 1 : 0);
+            command.Parameters.AddWithValue("$createdAt", DateTime.UtcNow.ToString("o"));
 
             var id = Convert.ToInt32(command.ExecuteScalar());
             todo.Id = id;
@@ -52,7 +57,8 @@ namespace TodoApi.Repositories
             connection.Open();
 
             var command = connection.CreateCommand();
-            command.CommandText = $"SELECT * FROM Todos WHERE Id = {id}";
+            command.CommandText = "SELECT * FROM Todos WHERE Id = $id";
+            command.Parameters.AddWithValue("$id", id);
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -69,11 +75,18 @@ namespace TodoApi.Repositories
             connection.Open();
 
             var command = connection.CreateCommand();
-            command.CommandText = $@"
-                UPDATE Todos
-                SET Title = '{todo.Title}', Description = '{todo.Description}', IsCompleted = {(todo.IsCompleted ? 1 : 0)}
-                WHERE Id = {id}
-            ";
+            command.CommandText = @"
+    UPDATE Todos
+    SET Title = $title,
+        Description = $description,
+        IsCompleted = $isCompleted
+    WHERE Id = $id
+";
+
+            command.Parameters.AddWithValue("$title", todo.Title);
+            command.Parameters.AddWithValue("$description", todo.Description ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("$isCompleted", todo.IsCompleted ? 1 : 0);
+            command.Parameters.AddWithValue("$id", id);
 
             command.ExecuteNonQuery();
 
@@ -87,7 +100,8 @@ namespace TodoApi.Repositories
             connection.Open();
 
             var command = connection.CreateCommand();
-            command.CommandText = $"DELETE FROM Todos WHERE Id = {id}";
+            command.CommandText = "DELETE FROM Todos WHERE Id = $id";
+            command.Parameters.AddWithValue("$id", id);
 
             return command.ExecuteNonQuery() > 0;
         }
@@ -98,7 +112,7 @@ namespace TodoApi.Repositories
             {
                 Id = reader.GetInt32(0),
                 Title = reader.GetString(1),
-                Description = reader.GetString(2),
+                Description = reader.IsDBNull(2) ? null : reader.GetString(2),
                 IsCompleted = reader.GetInt32(3) == 1,
                 CreatedAt = DateTime.Parse(reader.GetString(4))
             };

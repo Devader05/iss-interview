@@ -1,6 +1,10 @@
 using Microsoft.Data.Sqlite;
+using TodoApi.Interfaces;
+using TodoApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<ITodoService, TodoService>();
 
 // Add services to the container.
 builder.Services.AddControllers();

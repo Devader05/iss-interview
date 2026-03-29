@@ -1,9 +1,10 @@
 using Microsoft.Data.Sqlite;
+using TodoApi.Interfaces;
 using TodoApi.Models;
 
 namespace TodoApi.Services
 {
-    public class TodoService
+    public class TodoService : ITodoService
     {
         private string _connectionString = "Data Source=todos.db";
 

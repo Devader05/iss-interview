@@ -48,9 +48,16 @@ namespace TodoApi.Middlewares
 
             response.StatusCode = (int)statusCode;
 
+            var message = ex switch
+            {
+                NotFoundException => ex.Message,
+                ValidationException => ex.Message,
+                _ => "An unexpected error occurred. Please try again later."
+            };
+
             var result = JsonSerializer.Serialize(new
             {
-                message = ex.Message,
+                message,
                 type = ex.GetType().Name,
                 statusCode = response.StatusCode
             });

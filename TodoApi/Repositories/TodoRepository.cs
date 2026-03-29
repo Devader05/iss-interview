@@ -8,6 +8,12 @@ namespace TodoApi.Repositories
     public class TodoRepository : ITodoRepository
     {
         private string _connectionString = "Data Source=todos.db";
+        private readonly ILogger<TodoRepository> _logger;
+
+        public TodoRepository(ILogger<TodoRepository> logger)
+        {
+            _logger = logger;
+        }
 
         public Todo Create(Todo todo)
         {
@@ -15,6 +21,8 @@ namespace TodoApi.Repositories
             {
                 using var connection = new SqliteConnection(_connectionString);
                 connection.Open();
+
+                _logger.LogInformation("Inserting todo into database");
 
                 var command = connection.CreateCommand();
                 command.CommandText = @"
@@ -37,6 +45,7 @@ namespace TodoApi.Repositories
             }
             catch (SqliteException ex)
             {
+                _logger.LogError(ex, "Database error while creating todo");
                 throw new DatabaseException("Failed to create todo", ex);
             }
         }
@@ -49,6 +58,8 @@ namespace TodoApi.Repositories
 
                 using var connection = new SqliteConnection(_connectionString);
                 connection.Open();
+
+                _logger.LogInformation("Fetching all todo tasks from database");
 
                 var command = connection.CreateCommand();
                 command.CommandText = "SELECT * FROM Todos";
@@ -63,7 +74,8 @@ namespace TodoApi.Repositories
             }
             catch (SqliteException ex)
             {
-                throw new DatabaseException("Failed to fetch todos", ex);
+                _logger.LogError(ex, "Database error while fetching todo tasks");
+                throw new DatabaseException("Failed to fetch todo tasks", ex);
             }
         }
 
@@ -73,6 +85,8 @@ namespace TodoApi.Repositories
             {
                 using var connection = new SqliteConnection(_connectionString);
                 connection.Open();
+
+                _logger.LogInformation("Fetching todo task with id {Id}", id);
 
                 var command = connection.CreateCommand();
                 command.CommandText = "SELECT * FROM Todos WHERE Id = $id";
@@ -87,6 +101,7 @@ namespace TodoApi.Repositories
             }
             catch (SqliteException ex)
             {
+                _logger.LogError(ex, "Database error while fetching todo with id {Id}", id);
                 throw new DatabaseException($"Failed to fetch todo with id {id}", ex);
             }
         }
@@ -96,7 +111,9 @@ namespace TodoApi.Repositories
             try
             {
                 using var connection = new SqliteConnection(_connectionString);
-                connection.Open();
+                connection.Open();                                                                               
+
+                _logger.LogInformation("Updating todo tasks with id {Id}", id);
 
                 var command = connection.CreateCommand();
                 command.CommandText = @"
@@ -119,6 +136,7 @@ namespace TodoApi.Repositories
             }
             catch (SqliteException ex)
             {
+                _logger.LogError(ex, "Database error while updating todo with id {Id}", id);
                 throw new DatabaseException($"Failed to update todo with id {id}", ex);
             }
         }
@@ -130,6 +148,8 @@ namespace TodoApi.Repositories
                 using var connection = new SqliteConnection(_connectionString);
                 connection.Open();
 
+                _logger.LogInformation("Deleting todo task with id {Id}", id);
+
                 var command = connection.CreateCommand();
                 command.CommandText = "DELETE FROM Todos WHERE Id = $id";
                 command.Parameters.AddWithValue("$id", id);
@@ -138,6 +158,7 @@ namespace TodoApi.Repositories
             }
             catch (SqliteException ex)
             {
+                _logger.LogError(ex, "Database error while deleting todo with id {Id}", id);
                 throw new DatabaseException($"Failed to delete todo with id {id}", ex);
             }
         }

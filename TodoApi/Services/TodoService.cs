@@ -17,14 +17,14 @@ namespace TodoApi.Services
             _logger = logger;
         }
 
-        public TodoResponse CreateTodo(CreateTodoRequest request)
+        public TodoResponse CreateTodo(CreateTodoRequest createTodoRequest)
         {
-            _logger.LogInformation("Creating new todo with title: {Title}", request.Title);
+            _logger.LogInformation("Creating new todo with title: {Title}", createTodoRequest.Title);
 
             var todo = new Todo
             {
-                Title = request.Title,
-                Description = request.Description,
+                Title = createTodoRequest.Title,
+                Description = createTodoRequest.Description,
                 IsCompleted = false,
                 CreatedAt = DateTime.UtcNow
             };
@@ -60,7 +60,7 @@ namespace TodoApi.Services
             return MapToResponse(todo);
         }
 
-        public TodoResponse UpdateTodo(int id, UpdateTodoRequest request)
+        public TodoResponse UpdateTodo(int id, UpdateTodoRequest updateTodoRequest)
         {
             _logger.LogInformation("Updating todo with id: {Id}", id);
 
@@ -72,14 +72,14 @@ namespace TodoApi.Services
                 throw new NotFoundException($"Todo with id {id} not found");
             }
 
-            if (request.Title != null)
-                existing.Title = request.Title;
+            if (updateTodoRequest.Title != null)
+                existing.Title = updateTodoRequest.Title;
 
-            if (request.Description != null)
-                existing.Description = request.Description;
+            if (updateTodoRequest.Description != null)
+                existing.Description = updateTodoRequest.Description;
 
-            if (request.IsCompleted.HasValue)
-                existing.IsCompleted = request.IsCompleted.Value;
+            if (updateTodoRequest.IsCompleted.HasValue)
+                existing.IsCompleted = updateTodoRequest.IsCompleted.Value;
 
             var updated = _repository.Update(id, existing);
 
